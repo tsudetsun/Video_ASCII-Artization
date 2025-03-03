@@ -1,6 +1,6 @@
 # 動画をアスキーアート化
 Video ASCII-Artizationは動画をアスキーアート化するアプリです。
-|  ![変換前](exampleVideo_before.gif)  |  ![変換後](exampleVideo_after.gif)   |
+|  ![変換前](example_before.gif)  |  ![変換後](example_after.gif)   |
 | :----: | :----: |
 | 変換前 | 変換後 |
 
