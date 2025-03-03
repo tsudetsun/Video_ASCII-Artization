@@ -90,11 +90,19 @@ def video_to_ascii(video_path, font_path, font_size, char_width, output_width, o
     num_chars_per_line = len(lines[0]) if num_lines > 0 else 0
     
     # 新しい解像度を計算
-    new_height = 13 * num_lines
-    new_width = 5 * num_chars_per_line
+    width_factor = round(0.5039 * font_size)
+    if font_size < 10:
+        height_factor = round(0.7474 * font_size + 5.4702)
+    elif 10 <= font_size < 23:
+        height_factor = round(1.02 * font_size + 4.6)
+    else:
+        height_factor = round(0.85 * font_size + 4.5, 1)
     
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('temp_video.mp4', fourcc, fps / frame_skip, (new_width, new_height), isColor=False)
+    new_height = height_factor * num_lines
+    new_width = width_factor * num_chars_per_line
+    
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+    out = cv2.VideoWriter('temp_video.avi', fourcc, fps / frame_skip, (new_width, new_height), isColor=False)
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = []
@@ -106,12 +114,19 @@ def video_to_ascii(video_path, font_path, font_size, char_width, output_width, o
                 futures.append(executor.submit(process_frame, frame, new_width, new_height, font_path, font_size, add_spaces, space_interval, char_width, ASCII_SETS[ascii_set]))
         
         for future in tqdm(futures, desc="Writing frames"):
-            out.write(future.result())
+            try:
+                out.write(future.result())
+            except Exception as e:
+                print(f"Error processing frame {frame_idx}: {e}")
 
     cap.release()
     out.release()
 
-    video_clip = mp.VideoFileClip('temp_video.mp4')
+    # temp_video.aviが正しく生成されたか確認
+    if not os.path.exists('temp_video.avi'):
+        raise FileNotFoundError("temp_video.aviが生成されませんでした。")
+
+    video_clip = mp.VideoFileClip('temp_video.avi')
     audio_clip = mp.VideoFileClip(video_path).audio
     final_clip = video_clip.set_audio(audio_clip)
     
